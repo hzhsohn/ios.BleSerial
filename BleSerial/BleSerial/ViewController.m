@@ -44,6 +44,7 @@
 -(void)dealloc
 {
     t.delegate=nil;
+    [t disconnect];
     t=nil;
     
     _uuid=nil;
@@ -301,6 +302,33 @@
 {
     [t.peripheral readRSSI];
 }
+
+-(NSString*)getTime
+{
+    //当前设备的日期时间
+    NSDate*date = [NSDate date];
+    NSCalendar*calendar = [NSCalendar currentCalendar];
+    NSDateComponents*comps;
+    
+    NSInteger unitFlags = NSYearCalendarUnit |
+    NSMonthCalendarUnit |
+    NSDayCalendarUnit |
+    NSWeekdayCalendarUnit |
+    NSHourCalendarUnit |
+    NSMinuteCalendarUnit |
+    NSSecondCalendarUnit;
+    
+    //当前的时分秒获得
+    comps =[calendar components:(unitFlags)
+                       fromDate:date];
+    //NSInteger year = [comps year];
+    //NSInteger month = [comps month];
+    //NSInteger day = [comps day];
+    NSInteger hour = [comps hour];
+    NSInteger minute = [comps minute];
+    NSInteger second = [comps second];
+    return [NSString stringWithFormat:@"%ld:%ld:%ld", hour, minute, second];
+}
 -(IBAction)btnW:(id)sender
 {
     //发送
@@ -312,7 +340,7 @@
         if([t writeValue:Service_Write characteristicUUID:Characteristic_Write data:da])
         {
             NSMutableString * str=[[NSMutableString alloc] init];
-            [str appendFormat:@"UUID=0x%x & 0x%x ,发送%d字节:hex[",Service_Write,Characteristic_Write,tcmd.len];
+            [str appendFormat:@"[%@] UUID=0x%x & 0x%x -> %d [",[self  getTime],Service_Write,Characteristic_Write,tcmd.len];
             for (int i=0; i<tcmd.len; i++) {
                 [str appendFormat:@"%02X ",tcmd.cmd[i]];
             }
@@ -330,8 +358,6 @@
         [self performSelectorOnMainThread:@selector(log:) withObject:@"发送内容转换失败" waitUntilDone:YES];
     }
 }
-
-
 
 
 //----------------------- 回调 ----------------------------------
@@ -379,14 +405,14 @@
 -(void)mzhBluetoothService_cb:(CBPeripheral *)peripheral
                               :(UInt16)serv_uuid
 {
-    NSString * str=[NSString stringWithFormat:@"获取服务=0x%02x",serv_uuid];
+    NSString * str=[NSString stringWithFormat:@"[%@] 获取服务=0x%02x",[self  getTime],serv_uuid];
     [self performSelectorOnMainThread:@selector(log:) withObject:str waitUntilDone:YES];
 }
 -(void)mzhBluetoothCharacteristic_cb:(CBPeripheral *)peripheral
                                      :(UInt16)serv_uuid
                                      :(UInt16)characteristic_uuid
 {
-    NSString * str=[NSString stringWithFormat:@"服务=0x%02x ,拥有特征值=0x%02x",serv_uuid,characteristic_uuid];
+    NSString * str=[NSString stringWithFormat:@"[%@] 服务=0x%02x ,拥有特征值=0x%02x",[self  getTime],serv_uuid,characteristic_uuid];
     [self performSelectorOnMainThread:@selector(log:) withObject:str waitUntilDone:YES];
     
     //注册通知服务
@@ -398,7 +424,7 @@
                                   :(UInt16)characteristic_uuid
 {
     
-    NSString * str=[NSString stringWithFormat:@"注册特征 服务=0x%02x ,拥有特征值=0x%02x ,注册结果=%d",serv_uuid,characteristic_uuid,b];
+    NSString * str=[NSString stringWithFormat:@"[%@] 注册特征 服务=0x%02x ,拥有特征值=0x%02x ,注册结果=%d",[self  getTime],serv_uuid,characteristic_uuid,b];
     [self performSelectorOnMainThread:@selector(log:) withObject:str waitUntilDone:YES];
     
     if(b)
@@ -419,7 +445,7 @@
         NSMutableString * str=[[NSMutableString alloc] init];
         unsigned char buf[128];
         int len=(int)[data length];
-        [str appendFormat:@"UUID=%x ,收到%d字节:hex[",Characteristic_Read,len];
+        [str appendFormat:@"[%@] UUID=0x%x <- %d [",[self  getTime],Characteristic_Read,len];
         [data getBytes:buf length:len];
         for (int i=0; i<len; i++) {
             [str appendFormat:@"%02X ",buf[i]];

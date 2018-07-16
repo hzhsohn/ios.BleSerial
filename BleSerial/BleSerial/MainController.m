@@ -54,6 +54,8 @@
 -(void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
+    //获取设备
+    [self performSelector:@selector(itemClick:) withObject:self afterDelay:2];
 }
 
 - (void)didReceiveMemoryWarning {
